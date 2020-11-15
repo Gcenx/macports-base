@@ -756,10 +756,10 @@ AC_DEFUN([MP_UNIVERSAL_OPTIONS],[
 
 	if test "x$UNIVERSAL_ARCHS" = "x"; then
 		case "$MACOSX_VERSION" in
-			10.1[[0-3]]*)
+			10.1[[0-4]]*)
 				UNIVERSAL_ARCHS="x86_64 i386"
 			;;
-			10.1[[4-9]]*)
+			10.1[[5-9]]*)
 				UNIVERSAL_ARCHS="x86_64"
 			;;
 			10.[[0-5]]*)

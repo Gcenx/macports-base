@@ -3212,7 +3212,7 @@ proc get_canonical_archflags {{tool cc}} {
 
 # check that the selected archs are supported
 proc check_supported_archs {} {
-    global supported_archs build_arch universal_archs configure.build_arch configure.universal_archs subport
+    global supported_archs build_arch universal_archs configure.build_arch configure.universal_archs subport os.major
     if {$supported_archs eq "noarch"} {
         return 0
     } elseif {[variant_exists universal] && [variant_isset universal]} {
@@ -3236,7 +3236,14 @@ proc check_supported_archs {} {
                     lappend unsupported $arch
                 }
             }
-            ui_error "$subport cannot be installed for the configured universal_archs '$universal_archs' because the arch(s) '$unsupported' are not supported."
+            if {$unsupported == "i386" && ${os.major} == 18} {
+                ui_error "$subport cannot be installed for the configured universal_archs '$universal_archs' because the arch(s) '$unsupported' requires system headers to be installed."
+                ui_error "You can install it as part of the Xcode Command Line Tools package by running `xcode-select --install'."
+                ui_error "Next install 'macOS_SDK_headers_for_macOS_10.14.pkg' that's included with the Command Line Tools package"
+                ui_error "'installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /'"
+            } else {
+                ui_error "$subport cannot be installed for the configured universal_archs '$universal_archs' because the arch(s) '$unsupported' are not supported."
+              }
         }
     } elseif {$build_arch eq "" || ${configure.build_arch} ne ""} {
         return 0
@@ -3367,7 +3374,15 @@ proc _check_xcode_version {} {
                 }
             }
 
-            if {${os.major} >= 18 && [option configure.sdk_version] ne "" && [file tail [option configure.sdkroot]] ne "MacOSX[option configure.sdk_version].sdk"} {
+            # Check whether /usr/include and /usr/bin/make exist and tell users to install the command line tools, if they don't
+            if {${os.major} == 18 && (![file isdirectory [file join $cltpath usr include]] || ![file executable  [file join $cltpath usr bin make]])} {
+                if {[option configure.sdk_version] ne "" && [file tail [option configure.sdkroot]] ne "MacOSX[option configure.sdk_version].sdk"} {
+                    ui_warn "The macOS [option configure.sdk_version] SDK does not appear to be installed. Ports may not build correctly."
+                    ui_warn "You can install it as part of the Xcode Command Line Tools package by running `xcode-select --install'."
+                }
+            }
+
+            if {${os.major} >= 19 && [option configure.sdk_version] ne "" && [file tail [option configure.sdkroot]] ne "MacOSX[option configure.sdk_version].sdk"} {
                 ui_warn "The macOS [option configure.sdk_version] SDK does not appear to be installed. Ports may not build correctly."
                 ui_warn "You can install it as part of the Xcode Command Line Tools package by running `xcode-select --install'."
             }
